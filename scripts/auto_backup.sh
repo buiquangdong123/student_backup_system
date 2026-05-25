@@ -1,55 +1,71 @@
 #!/bin/bash
 
-# Tao thu muc backups neu chua ton tai
-mkdir -p ../backups
-mkdir -p ../logs
+# Di chuyen den thu muc project
+cd ~/student_backup_system
 
-# Ham backup du lieu
+# Tao thu muc neu chua ton tai
+mkdir -p backups
+mkdir -p logs
+
+# Ham backup
 backup_data() {
+
     TIME=$(date +"%Y%m%d_%H%M%S")
     BACKUP_FILE="backup_$TIME.tar.gz"
 
-    tar -czf ../backups/$BACKUP_FILE ../data
+    # Nen thu muc data
+    tar -czf backups/$BACKUP_FILE data
 
-    echo "[$(date)] Backup thanh cong: $BACKUP_FILE" >> ../logs/backup.log
+    # Ghi log
+    echo "[$(date)] Backup thanh cong: $BACKUP_FILE" >> logs/backup.log
 
-    echo "Backup thanh cong!"
-}
-
-# Ham xem danh sach backup
-list_backups() {
-    echo "Danh sach file backup:"
-    ls -lh ../backups
-}
-
-# Ham xem log
-view_logs() {
-    echo "Noi dung log:"
-    cat ../logs/backup.log
-}
-
-# Kiem tra ket noi Internet
-check_internet() {
+    # Kiem tra Internet
     ping -c 1 google.com > /dev/null 2>&1
 
     if [ $? -eq 0 ]; then
-        echo "Internet dang hoat dong"
+
+        # Push GitHub
+        git add .
+
+        git commit -m "Auto backup $TIME"
+
+        git push origin main
+
+        echo "[$(date)] Push GitHub thanh cong" >> logs/backup.log
+
     else
-        echo "Khong co ket noi Internet"
+        echo "[$(date)] Khong co ket noi Internet" >> logs/backup.log
     fi
+
+    echo "Backup hoan tat!"
 }
 
-# Menu
+# Xem danh sach backup
+list_backups() {
+    ls -lh backups
+}
+
+# Xem log
+view_logs() {
+    cat logs/backup.log
+}
+
+# Neu script duoc goi boi cronjob
+if [ "$1" == "auto" ]; then
+    backup_data
+    exit 0
+fi
+
+# Menu thu cong
 while true
 do
     echo "===== MENU ====="
     echo "1. Backup du lieu"
     echo "2. Xem danh sach backup"
     echo "3. Xem log"
-    echo "4. Kiem tra Internet"
-    echo "5. Thoat"
+    echo "4. Thoat"
 
-    read -p "Chon chuc nang: " choice
+    read -p "Chon: " choice
 
     case $choice in
         1)
@@ -62,10 +78,6 @@ do
             view_logs
             ;;
         4)
-            check_internet
-            ;;
-        5)
-            echo "Thoat chuong trinh"
             exit 0
             ;;
         *)
